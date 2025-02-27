@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Site</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        input, button { padding: 10px; margin: 5px; }
+        .hidden { display: none; }
+        .game-list { display: flex; flex-wrap: wrap; justify-content: center; }
+        .game { margin: 20px; padding: 10px; border: 1px solid #ccc; width: 200px; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN PAGE -->
+    <div id="login-container">
+        <h2>Login to Play Games</h2>
+        <input type="email" id="email" placeholder="Enter your email" required>
+        <button onclick="login()">Login</button>
+        <p id="message"></p>
+        <button onclick="showAdminPanel()">Admin Panel</button>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel" class="hidden">
+        <h1>Admin Panel - Manage Emails</h1>
+        <button onclick="logout()">Logout</button>
+        <br><br>
+        <input type="email" id="newEmail" placeholder="Enter email to add">
+        <button onclick="addEmail()">Add Email</button>
+
+        <h3>Allowed Emails:</h3>
+        <ul id="emailList"></ul>
+    </div>
+
+    <!-- GAME PAGE -->
+    <div id="games-container" class="hidden">
+        <h1>Welcome to My Game Site</h1>
+        <button onclick="logout()">Logout</button>
+        <p>Click on a game to play!</p>
+        
+        <div class="game-list">
+            <div class="game">
+                <a href="games/game1/index.html">Game 1</a>
+            </div>
+            <div class="game">
+                <a href="games/game2/index.html">Game 2</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getAllowedEmails() {
+            return JSON.parse(localStorage.getItem("allowedEmails")) || ["admin@example.com"];
+        }
+
+        function saveAllowedEmails(emails) {
+            localStorage.setItem("allowedEmails", JSON.stringify(emails));
+            displayEmails();
+        }
+
+        function displayEmails() {
+            const emailList = document.getElementById("emailList");
+            emailList.innerHTML = "";
+            getAllowedEmails().forEach(email => {
+                const li = document.createElement("li");
+                li.textContent = email;
+                const removeBtn = document.createElement("button");
+                removeBtn.textContent = "Remove";
+                removeBtn.onclick = () => removeEmail(email);
+                li.appendChild(removeBtn);
+                emailList.appendChild(li);
+            });
+        }
+
+        function addEmail() {
+            const newEmail = document.getElementById("newEmail").value.trim();
+            if (newEmail) {
+                const emails = getAllowedEmails();
+                if (!emails.includes(newEmail)) {
+                    emails.push(newEmail);
+                    saveAllowedEmails(emails);
+                }
+            }
+        }
+
+        function removeEmail(email) {
+            let emails = getAllowedEmails();
+            emails = emails.filter(e => e !== email);
+            saveAllowedEmails(emails);
+        }
+
+        function login() {
+            const email = document.getElementById("email").value.trim();
+            const allowedEmails = getAllowedEmails();
+
+            if (allowedEmails.includes(email)) {
+                localStorage.setItem("userEmail", email);
+                if (email === "admin@example.com") {
+                    showAdminPanel();
+                } else {
+                    showGames();
+                }
+            } else {
+                document.getElementById("message").innerText = "Access denied.";
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("userEmail");
+            showLogin();
+        }
+
+        function showLogin() {
+            document.getElementById("login-container").classList.remove("hidden");
+            document.getElementById("admin-panel").classList.add("hidden");
+            document.getElementById("games-container").classList.add("hidden");
+        }
+
+        function showAdminPanel() {
+            const userEmail = localStorage.getItem("userEmail");
+            if (userEmail !== "admin@example.com") {
+                alert("Access denied.");
+                return;
+            }
+
+            document.getElementById("login-container").classList.add("hidden");
+            document.getElementById("admin-panel").classList.remove("hidden");
+            document.getElementById("games-container").classList.add("hidden");
+            displayEmails();
+        }
+
+        function showGames() {
+            document.getElementById("login-container").classList.add("hidden");
+            document.getElementById("admin-panel").classList.add("hidden");
+            document.getElementById("games-container").classList.remove("hidden");
+        }
+
+        window.onload = function () {
+            const userEmail = localStorage.getItem("userEmail");
+            const allowedEmails = getAllowedEmails();
+
+            if (userEmail) {
+                if (userEmail === "admin@example.com") {
+                    showAdminPanel();
+                } else if (allowedEmails.includes(userEmail)) {
+                    showGames();
+                } else {
+                    showLogin();
+                }
+            } else {
+                showLogin();
+            }
+        };
+    </script>
+</body>
+</html>
