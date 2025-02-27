@@ -5,155 +5,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Site</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        input, button { padding: 10px; margin: 5px; }
+        body { text-align: center; font-family: Arial, sans-serif; }
         .hidden { display: none; }
         .game-list { display: flex; flex-wrap: wrap; justify-content: center; }
-        .game { margin: 20px; padding: 10px; border: 1px solid #ccc; width: 200px; }
+        .game { margin: 20px; padding: 10px; border: 1px solid #ccc; width: 200px; cursor: pointer; background: lightgray; }
+        canvas { border: 1px solid black; }
+        iframe { width: 100%; height: 600px; border: none; }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN PAGE -->
-    <div id="login-container">
-        <h2>Login to Play Games</h2>
-        <input type="email" id="email" placeholder="Enter your email" required>
-        <button onclick="login()">Login</button>
-        <p id="message"></p>
-        <button onclick="showAdminPanel()">Admin Panel</button>
-    </div>
-
-    <!-- ADMIN PANEL -->
-    <div id="admin-panel" class="hidden">
-        <h1>Admin Panel - Manage Emails</h1>
-        <button onclick="logout()">Logout</button>
-        <br><br>
-        <input type="email" id="newEmail" placeholder="Enter email to add">
-        <button onclick="addEmail()">Add Email</button>
-
-        <h3>Allowed Emails:</h3>
-        <ul id="emailList"></ul>
-    </div>
-
-    <!-- GAME PAGE -->
-    <div id="games-container" class="hidden">
-        <h1>Welcome to My Game Site</h1>
-        <button onclick="logout()">Logout</button>
-        <p>Click on a game to play!</p>
-        
+    <!-- Game Selection Menu -->
+    <div id="game-menu">
+        <h1>Select a Game</h1>
         <div class="game-list">
-            <div class="game">
-                <a href="games/game1/index.html">Game 1</a>
-            </div>
-            <div class="game">
-                <a href="games/game2/index.html">Game 2</a>
-            </div>
+            <div class="game" onclick="loadGame('clickGame')">Click Game</div>
+            <div class="game" onclick="loadGame('pongGame')">Pong Game</div>
+            <div class="game" onclick="loadGame('eaglercraft')">Eaglercraft 1.5.2</div>
         </div>
     </div>
 
+    <!-- Game Container -->
+    <div id="game-container" class="hidden">
+        <h1 id="game-title"></h1>
+        <button onclick="exitGame()">Back to Menu</button>
+        <div id="game-area"></div>
+    </div>
+
     <script>
-        function getAllowedEmails() {
-            return JSON.parse(localStorage.getItem("allowedEmails")) || ["admin@example.com"];
+        function loadGame(game) {
+            document.getElementById("game-menu").classList.add("hidden");
+            document.getElementById("game-container").classList.remove("hidden");
+            document.getElementById("game-area").innerHTML = "";
+
+            if (game === "clickGame") {
+                document.getElementById("game-title").innerText = "Click Game";
+                loadClickGame();
+            } else if (game === "pongGame") {
+                document.getElementById("game-title").innerText = "Pong Game";
+                loadPongGame();
+            } else if (game === "eaglercraft") {
+                document.getElementById("game-title").innerText = "Eaglercraft 1.5.2";
+                let iframe = document.createElement("iframe");
+                iframe.src = "games/Eaglercraft.1.5.2.html";
+                document.getElementById("game-area").appendChild(iframe);
+            }
         }
 
-        function saveAllowedEmails(emails) {
-            localStorage.setItem("allowedEmails", JSON.stringify(emails));
-            displayEmails();
+        function exitGame() {
+            document.getElementById("game-menu").classList.remove("hidden");
+            document.getElementById("game-container").classList.add("hidden");
         }
 
-        function displayEmails() {
-            const emailList = document.getElementById("emailList");
-            emailList.innerHTML = "";
-            getAllowedEmails().forEach(email => {
-                const li = document.createElement("li");
-                li.textContent = email;
-                const removeBtn = document.createElement("button");
-                removeBtn.textContent = "Remove";
-                removeBtn.onclick = () => removeEmail(email);
-                li.appendChild(removeBtn);
-                emailList.appendChild(li);
+        function loadClickGame() {
+            let score = 0;
+            let gameBox = document.createElement("div");
+            gameBox.style.width = "100px";
+            gameBox.style.height = "100px";
+            gameBox.style.background = "red";
+            gameBox.style.margin = "50px auto";
+            gameBox.style.cursor = "pointer";
+            document.getElementById("game-area").appendChild(gameBox);
+
+            let scoreText = document.createElement("p");
+            scoreText.innerHTML = "Score: <span id='score'>0</span>";
+            document.getElementById("game-area").appendChild(scoreText);
+
+            gameBox.onclick = function() {
+                score++;
+                document.getElementById("score").innerText = score;
+            };
+        }
+
+        function loadPongGame() {
+            let canvas = document.createElement("canvas");
+            canvas.width = 400;
+            canvas.height = 300;
+            document.getElementById("game-area").appendChild(canvas);
+            let ctx = canvas.getContext("2d");
+
+            let ball = { x: 200, y: 150, dx: 2, dy: 2, radius: 10 };
+            let paddle = { x: 180, y: 280, width: 60, height: 10 };
+            let leftPressed = false, rightPressed = false;
+
+            document.addEventListener("keydown", function(e) {
+                if (e.key === "ArrowLeft") leftPressed = true;
+                if (e.key === "ArrowRight") rightPressed = true;
             });
-        }
 
-        function addEmail() {
-            const newEmail = document.getElementById("newEmail").value.trim();
-            if (newEmail) {
-                const emails = getAllowedEmails();
-                if (!emails.includes(newEmail)) {
-                    emails.push(newEmail);
-                    saveAllowedEmails(emails);
+            document.addEventListener("keyup", function(e) {
+                if (e.key === "ArrowLeft") leftPressed = false;
+                if (e.key === "ArrowRight") rightPressed = false;
+            });
+
+            function gameLoop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (leftPressed && paddle.x > 0) paddle.x -= 5;
+                if (rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += 5;
+
+                ctx.fillStyle = "blue";
+                ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+
+                if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) ball.dx *= -1;
+                if (ball.y - ball.radius < 0) ball.dy *= -1;
+
+                if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                    ball.dy *= -1;
                 }
-            }
-        }
 
-        function removeEmail(email) {
-            let emails = getAllowedEmails();
-            emails = emails.filter(e => e !== email);
-            saveAllowedEmails(emails);
-        }
-
-        function login() {
-            const email = document.getElementById("email").value.trim();
-            const allowedEmails = getAllowedEmails();
-
-            if (allowedEmails.includes(email)) {
-                localStorage.setItem("userEmail", email);
-                if (email === "admin@example.com") {
-                    showAdminPanel();
-                } else {
-                    showGames();
+                if (ball.y + ball.radius > canvas.height) {
+                    alert("Game Over");
+                    ball.x = 200;
+                    ball.y = 150;
+                    ball.dx = 2;
+                    ball.dy = 2;
                 }
-            } else {
-                document.getElementById("message").innerText = "Access denied.";
-            }
-        }
 
-        function logout() {
-            localStorage.removeItem("userEmail");
-            showLogin();
-        }
+                ctx.fillStyle = "red";
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
 
-        function showLogin() {
-            document.getElementById("login-container").classList.remove("hidden");
-            document.getElementById("admin-panel").classList.add("hidden");
-            document.getElementById("games-container").classList.add("hidden");
-        }
-
-        function showAdminPanel() {
-            const userEmail = localStorage.getItem("userEmail");
-            if (userEmail !== "admin@example.com") {
-                alert("Access denied.");
-                return;
+                requestAnimationFrame(gameLoop);
             }
 
-            document.getElementById("login-container").classList.add("hidden");
-            document.getElementById("admin-panel").classList.remove("hidden");
-            document.getElementById("games-container").classList.add("hidden");
-            displayEmails();
+            gameLoop();
         }
-
-        function showGames() {
-            document.getElementById("login-container").classList.add("hidden");
-            document.getElementById("admin-panel").classList.add("hidden");
-            document.getElementById("games-container").classList.remove("hidden");
-        }
-
-        window.onload = function () {
-            const userEmail = localStorage.getItem("userEmail");
-            const allowedEmails = getAllowedEmails();
-
-            if (userEmail) {
-                if (userEmail === "admin@example.com") {
-                    showAdminPanel();
-                } else if (allowedEmails.includes(userEmail)) {
-                    showGames();
-                } else {
-                    showLogin();
-                }
-            } else {
-                showLogin();
-            }
-        };
     </script>
+
 </body>
 </html>
