@@ -29,6 +29,7 @@
     <div id="game-container" class="hidden">
         <h1 id="game-title"></h1>
         <button onclick="exitGame()">Back to Menu</button>
+        <button onclick="makeFullscreen()">Fullscreen</button>
         <div id="game-area"></div>
     </div>
 
@@ -55,6 +56,20 @@
         function exitGame() {
             document.getElementById("game-menu").classList.remove("hidden");
             document.getElementById("game-container").classList.add("hidden");
+        }
+
+        function makeFullscreen() {
+            let area = document.getElementById('game-area');
+            // Try to pick the main child element (canvas, iframe, or div)
+            let target = area.querySelector('canvas, iframe, div');
+            if (!target) target = area;
+            if (target.requestFullscreen) {
+                target.requestFullscreen();
+            } else if (target.webkitRequestFullscreen) {
+                target.webkitRequestFullscreen();
+            } else if (target.msRequestFullscreen) {
+                target.msRequestFullscreen();
+            }
         }
 
         function loadClickGame() {
@@ -88,11 +103,15 @@
             let paddle = { x: 180, y: 280, width: 60, height: 10 };
             let leftPressed = false, rightPressed = false;
 
+            // Remove previously attached event listeners by cloning the document
+            // (prevents multiple listeners if you switch games)
+            let clone = document.body.cloneNode(true);
+            document.body.parentNode.replaceChild(clone, document.body);
+
             document.addEventListener("keydown", function(e) {
                 if (e.key === "ArrowLeft") leftPressed = true;
                 if (e.key === "ArrowRight") rightPressed = true;
             });
-
             document.addEventListener("keyup", function(e) {
                 if (e.key === "ArrowLeft") leftPressed = false;
                 if (e.key === "ArrowRight") rightPressed = false;
@@ -139,4 +158,4 @@
     </script>
 
 </body>
-</html>                
+</html>
